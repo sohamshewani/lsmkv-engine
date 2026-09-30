@@ -5,6 +5,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Single-writer LSM-Tree Key-Value Engine.
+ * Thread safety: serialized via synchronized monitor locks.
+ */
 public class Engine implements AutoCloseable {
     public static final String TOMBSTONE = "__LSM_TOMBSTONE_VAL__";
 

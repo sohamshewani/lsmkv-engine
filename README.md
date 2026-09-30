@@ -143,3 +143,29 @@ For detailed benchmark results, please refer to the `benchmarks` directory withi
 ---
 
 This README provides a high-level overview of the `lsmkv-engine` project, including its architecture, design decisions, and installation instructions. For more detailed information, please consult the project documentation and source code.
+
+## Concurrency Model & Thread Safety
+
+### Current Model: Single-Writer Architecture
+The engine is currently designed around a **single-writer thread model**:
+- **Write Path:** Invocations of `put()`, `delete()`, and `flush()` are serialized via coarse-grained monitor locks (`synchronized`). Concurrent write operations block until the active write/flush cycle finishes.
+- **Read Path:** `get()` calls acquire the instance lock to inspect the active MemTable and on-disk SSTables sequentially.
+- **Thread-Safety Status:** While `synchronized` guards prevent in-memory race conditions, the engine is **not optimized for high-concurrency multi-threaded read/write workloads**. File descriptors and active SSTable lists are guarded by simple object locks rather than lock-free or read-write locks (`ReadWriteLock`).
+
+---
+
+### Future Architecture: Multi-Reader Concurrent Pipeline
+
+To scale read/write operations independently and eliminate latency spikes caused by synchronous disk flushes, future versions will transition to a fully decoupled concurrent pipeline:
+
+```text
+        multiple readers
+               ↓
+          MemTable (Lock-Free SkipList)
+               ↓
+        background flush (Immutable MemTable swap)
+               ↓
+           SSTables (L0..LN)
+               ↓
+     background compaction (Multi-Way Merge)
+
