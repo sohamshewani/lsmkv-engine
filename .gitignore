@@ -1,0 +1,10 @@
+*.o
+*.a
+*.out
+*.class
+build/
+target/
+bin/
+.DS_Store
+venv/
+__pycache__/
