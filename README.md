@@ -2,12 +2,10 @@
 
 ## Badges, Executive Overview & Problem Statement
 
-![GitHub](https://img.shields.io/github/license/alibaba/lsmkv-engine)
-![GitHub Release](https://img.shields.io/github/v/release/alibaba/lsmkv-engine)
-![GitHub stars](https://img.shields.io/github/stars/alibaba/lsmkv-engine)
-![GitHub forks](https://img.shields.io/github/forks/alibaba/lsmkv-engine)
-![GitHub issues](https://img.shields.io/github/issues/alibaba/lsmkv-engine)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/alibaba/lsmkv-engine)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Stars](https://img.shields.io/github/stars/sohamshewani/lsmkv-engine?style=flat)](https://github.com/sohamshewani/lsmkv-engine/stargazers)
+[![Forks](https://img.shields.io/github/forks/sohamshewani/lsmkv-engine?style=flat)](https://github.com/sohamshewani/lsmkv-engine/network/members)
+[![Issues](https://img.shields.io/github/issues/sohamshewani/lsmkv-engine?style=flat)](https://github.com/sohamshewani/lsmkv-engine/issues)
 
 ### Executive Overview
 
