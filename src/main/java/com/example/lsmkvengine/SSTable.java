@@ -1,23 +1,45 @@
-// SSTable class for on-disk storage
+package com.example.lsmkvengine;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.Map;
+import java.util.TreeMap;
+
 public class SSTable {
-    private final Map<String, String> data;
-    private final String path;
+    private final File file;
 
-    public SSTable(String path, Memtable memtable) {
-        this.path = path;
-        this.data = memtable.map.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    public SSTable(File file) {
+        this.file = file;
     }
 
-    public void writeToFile() {
-        // Code to write data to file
+    public static SSTable flush(Memtable memtable, File targetFile) throws IOException {
+        try (FileWriter writer = new FileWriter(targetFile)) {
+            for (Map.Entry<String, String> entry : memtable.getMap().entrySet()) {
+                writer.write(entry.getKey() + ":" + entry.getValue() + "\n");
+            }
+            writer.flush();
+        }
+        return new SSTable(targetFile);
     }
 
-    public boolean contains(String key) {
-        return data.containsKey(key);
+    public String get(String key) throws IOException {
+        if (!file.exists()) return null;
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(":", 2);
+                if (parts.length == 2 && parts[0].equals(key)) {
+                    return parts[1];
+                }
+            }
+        }
+        return null;
     }
 
-    public String get(String key) {
-        return data.get(key);
+    public File getFile() {
+        return file;
     }
 }

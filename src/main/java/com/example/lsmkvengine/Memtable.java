@@ -1,27 +1,26 @@
-// Memtable class for in-memory storage
-public class Memtable {
-    private final Map<String, String> map;
-    private final int capacity;
+package com.example.lsmkvengine;
 
-    public Memtable(int capacity) {
-        this.capacity = capacity;
-        this.map = new HashMap<>(capacity);
-    }
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListMap;
+
+public class Memtable {
+    private final ConcurrentSkipListMap<String, String> map = new ConcurrentSkipListMap<>();
 
     public void put(String key, String value) {
-        if (map.size() < capacity) {
-            map.put(key, value);
-        } else {
-            throw new IllegalStateException("Memtable is full");
-        }
-    }
-
-    public boolean contains(String key) {
-        return map.containsKey(key);
+        map.put(key, value);
     }
 
     public String get(String key) {
         return map.get(key);
+    }
+
+    public Map<String, String> getMap() {
+        return Collections.unmodifiableMap(map);
+    }
+
+    public void clear() {
+        map.clear();
     }
 
     public int size() {

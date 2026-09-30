@@ -1,48 +1,45 @@
-// Engine class for LSMKV storage
-public class Engine {
-    private static final int DEFAULT_MEMTABLE_SIZE = 10000;
-    private static final int DEFAULT_SSTABLE_SIZE = 10000;
-    private Memtable memtable;
-    private List<SSTable> sstables;
-    private WAL wal;
-    private BloomFilter bloomFilter;
-    private String dataDir;
+package com.example.lsmkvengine;
 
-    public Engine(String dataDir) {
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Engine {
+    private final Memtable memtable = new Memtable();
+    private final List<SSTable> sstables = new ArrayList<>();
+    private final WAL wal;
+    private final File dataDir;
+
+    public Engine(File dataDir) throws IOException {
         this.dataDir = dataDir;
-        this.memtable = new Memtable(DEFAULT_MEMTABLE_SIZE);
-        this.sstables = new ArrayList<>();
-        this.wal = new WAL(dataDir);
-        this.bloomFilter = new BloomFilter(dataDir);
+        if (!dataDir.exists()) dataDir.mkdirs();
+        this.wal = new WAL(new File(dataDir, "commit.wal"));
     }
 
-    public void put(String key, String value) {
+    public synchronized void put(String key, String value) throws IOException {
+        wal.append(key, value);
         memtable.put(key, value);
-        wal.log(key, value);
-        if (memtable.size() >= DEFAULT_MEMTABLE_SIZE) {
-            flushMemtableToSSTable();
+        if (memtable.size() >= 1000) {
+            flush();
         }
     }
 
-    public String get(String key) {
-        if (bloomFilter.mightContain(key)) {
-            for (SSTable sstable : sstables) {
-                if (sstable.contains(key)) {
-                    return sstable.get(key);
-                }
-            }
+    public synchronized String get(String key) throws IOException {
+        String val = memtable.get(key);
+        if (val != null) return val;
+        for (int i = sstables.size() - 1; i >= 0; i--) {
+            val = sstables.get(i).get(key);
+            if (val != null) return val;
         }
         return null;
     }
 
-    public void flushMemtableToSSTable() {
-        SSTable sstable = new SSTable(dataDir, memtable);
-        sstables.add(sstable);
-        memtable = new Memtable(DEFAULT_MEMTABLE_SIZE);
-        wal.flushToDisk(sstable);
-    }
-
-    public void recover() {
-        Recovery.recover(this);
+    public synchronized void flush() throws IOException {
+        File sstableFile = new File(dataDir, "sstable-" + System.currentTimeMillis() + ".db");
+        SSTable table = SSTable.flush(memtable, sstableFile);
+        sstables.add(table);
+        memtable.clear();
+        wal.clear();
     }
 }
