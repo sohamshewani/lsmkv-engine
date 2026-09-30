@@ -10,11 +10,14 @@ public class Engine {
     private final List<SSTable> sstables = new ArrayList<>();
     private final WAL wal;
     private final File dataDir;
+    private final LeveledCompactionManager compactionManager;
 
     public Engine(File dataDir) throws IOException {
         this.dataDir = dataDir;
         if (!dataDir.exists()) dataDir.mkdirs();
         this.wal = new WAL(new File(dataDir, "commit.wal"));
+        // Triggers background compaction when Level 0 reaches 4 tables
+        this.compactionManager = new LeveledCompactionManager(dataDir, 4);
     }
 
     public synchronized void put(String key, String value) throws IOException {
@@ -36,10 +39,16 @@ public class Engine {
     }
 
     public synchronized void flush() throws IOException {
-        File sstableFile = new File(dataDir, "sstable-" + System.currentTimeMillis() + ".db");
+        File sstableFile = new File(dataDir, "sstable-L0-" + System.currentTimeMillis() + ".db");
         SSTable table = SSTable.flush(memtable, sstableFile);
         sstables.add(table);
         memtable.clear();
         wal.clear();
+        // Hand off to the non-blocking background compactor
+        compactionManager.registerL0Table(sstableFile);
+    }
+
+    public void close() {
+        compactionManager.shutdown();
     }
 }
