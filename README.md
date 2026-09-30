@@ -169,3 +169,27 @@ To scale read/write operations independently and eliminate latency spikes caused
                ↓
      background compaction (Multi-Way Merge)
 
+
+
+## Architecture
+
+```text
+             PUT
+              |
+              v
+             WAL
+              |
+              v
+          MemTable
+              |
+              v
+         Immutable
+              |
+              v
+           SSTable
+              |
+              v
+        Compaction
+        /    |    \
+      L0     L1    L2
+```
