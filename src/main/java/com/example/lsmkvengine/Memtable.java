@@ -1,8 +1,7 @@
 package com.example.lsmkvengine;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.Set;
 
 public class Memtable {
     private final ConcurrentSkipListMap<String, String> map = new ConcurrentSkipListMap<>();
@@ -15,15 +14,15 @@ public class Memtable {
         return map.get(key);
     }
 
-    public Map<String, String> getMap() {
-        return Collections.unmodifiableMap(map);
+    public int size() {
+        return map.size();
     }
 
     public void clear() {
         map.clear();
     }
 
-    public int size() {
-        return map.size();
+    public Set<String> keySet() {
+        return map.keySet();
     }
 }

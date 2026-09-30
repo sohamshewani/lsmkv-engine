@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Engine {
+public class Engine implements AutoCloseable {
     public static final String TOMBSTONE = "__LSM_TOMBSTONE_VAL__";
 
     private final Memtable memtable = new Memtable();
@@ -13,6 +13,7 @@ public class Engine {
     private final WAL wal;
     private final File dataDir;
     private final LeveledCompactionManager compactionManager;
+    private static final int MEMTABLE_THRESHOLD = 32_000;
 
     public Engine(File dataDir) throws IOException {
         this.dataDir = dataDir;
@@ -20,7 +21,6 @@ public class Engine {
         this.wal = new WAL(new File(dataDir, "commit.wal"));
         this.compactionManager = new LeveledCompactionManager(dataDir, 4);
 
-        // Scan existing SSTables on disk at startup
         File[] existingFiles = dataDir.listFiles((dir, name) -> name.endsWith(".db"));
         if (existingFiles != null) {
             java.util.Arrays.sort(existingFiles, java.util.Comparator.comparingLong(File::lastModified));
@@ -33,7 +33,7 @@ public class Engine {
     public synchronized void put(String key, String value) throws IOException {
         wal.append(key, value);
         memtable.put(key, value);
-        if (memtable.size() >= 1000) {
+        if (memtable.size() >= MEMTABLE_THRESHOLD) {
             flush();
         }
     }
@@ -66,7 +66,9 @@ public class Engine {
         compactionManager.registerL0Table(sstableFile);
     }
 
-    public void close() {
+    @Override
+    public void close() throws IOException {
         compactionManager.shutdown();
+        wal.close();
     }
 }
